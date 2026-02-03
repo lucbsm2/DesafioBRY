@@ -12,7 +12,7 @@ namespace DigestService {
         // Abre com a flag 'ate' (at the end) para posicionar o cursor no fim e obter o tamanho imediatamente
         std::ifstream file(filePath, std::ios::binary | std::ios::ate);
         if (!file) {
-            Utils::logInfo("Não foi possível abrir o arquivo: " + filePath);
+            Utils::logInfo("Nï¿½o foi possï¿½vel abrir o arquivo: " + filePath);
             return "";
         }
 
@@ -50,7 +50,7 @@ namespace DigestService {
 
         std::ofstream out(outputFile);
         if (!out.is_open()) {
-            Utils::logInfo("Nao foi possível escrever em " + outputFile);
+            Utils::logInfo("Nao foi possï¿½vel escrever em " + outputFile);
             return false;
         }
         

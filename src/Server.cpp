@@ -26,12 +26,8 @@
 
 using namespace Poco::Net;
 
-// ------------------------------------------------------------------
-// PartHandler: Handles multipart file uploads by saving to disk
-// ------------------------------------------------------------------
 class TempFilePartHandler : public PartHandler {
 public:
-    // Map: "form_field_name" -> "file_path_on_disk"
     std::map<std::string, std::string> files;
 
     void handlePart(const MessageHeader& header, std::istream& stream) override {
@@ -43,12 +39,10 @@ public:
             std::string name = params.get("name", "");
             std::string filename = params.get("filename", "");
             
-            // Skip non-file fields (handled by HTMLForm)
             if (filename.empty()) {
                 return;
             }
             
-            // Create a temp file that persists until manually deleted or process exit
             Poco::TemporaryFile tempFile;
             tempFile.keepUntilExit();
             std::string tempFileName = tempFile.path();
@@ -65,7 +59,6 @@ public:
 // ------------------------------------------------------------------
 // Endpoint: POST /signature
 // Expects: file, p12, password
-// Returns: Base64 encoded CMS signature
 // ------------------------------------------------------------------
 class SignatureHandler : public HTTPRequestHandler {
 public:
@@ -84,20 +77,18 @@ public:
 
             std::string password = form.get("password", "");
             
-            // Validate required parameters
             if (partHandler.files.find("file") == partHandler.files.end() || 
                 partHandler.files.find("p12") == partHandler.files.end() || 
                 password.empty()) {
                 
                 response.setStatus(HTTPResponse::HTTP_BAD_REQUEST);
-                response.send() << "Missing parameters: file, p12, or password.";
+                response.send() << "Faltando arquivos: file, p12, or password.";
                 return;
             }
 
             std::string docPath = partHandler.files["file"];
             std::string p12Path = partHandler.files["p12"];
             
-            // Construct output path robustly
             Poco::Path docPathObj(docPath);
             std::string docDir = docPathObj.parent().toString();
             std::string docBaseName = docPathObj.getBaseName();    
@@ -105,12 +96,10 @@ public:
 
             bool success = SignerService::generateSignature(p12Path, password, docPath, sigPath);
 
-            // Cleanup inputs immediately
             std::remove(docPath.c_str());
             std::remove(p12Path.c_str());
 
             if (success) {
-                // Read binary signature and encode to Base64
                 std::ifstream sigFile(sigPath, std::ios::binary);
                 std::ostringstream oss;
                 
@@ -121,8 +110,7 @@ public:
                 response.setContentType("text/plain");
                 response.send() << oss.str();
 
-                // Cleanup output file
-                //std::remove(sigPath.c_str());
+                std::remove(sigPath.c_str());
             } else {
                 response.setStatus(HTTPResponse::HTTP_INTERNAL_SERVER_ERROR);
                 response.send() << "Failed to sign document.";
@@ -139,7 +127,6 @@ public:
 // ------------------------------------------------------------------
 // Endpoint: POST /verify
 // Expects: file (CMS signature)
-// Returns: JSON with verification details
 // ------------------------------------------------------------------
 class VerifyHandler : public HTTPRequestHandler {
 public:
@@ -161,12 +148,10 @@ public:
 
         std::string sigPath = partHandler.files["file"];
         
-        // Execute verification logic
         auto result = VerifierService::verifyAndGetDetails(sigPath);
         
         std::remove(sigPath.c_str());
 
-        // Build JSON response
         Poco::JSON::Object json;
         json.set("status", result.status);
 
@@ -185,9 +170,6 @@ public:
     }
 };
 
-// ------------------------------------------------------------------
-// Router Factory
-// ------------------------------------------------------------------
 class RequestFactory : public HTTPRequestHandlerFactory {
 public:
     HTTPRequestHandler* createRequestHandler(const HTTPServerRequest& request) override {
@@ -201,15 +183,11 @@ public:
     }
 };
 
-// ------------------------------------------------------------------
-// Main Entry Point
-// ------------------------------------------------------------------
 int main() {
     try {
         
         std::srand(std::time(nullptr));
 
-        // OpenSSL initialization
         OpenSSL_add_all_algorithms();
         ERR_load_crypto_strings();
 
