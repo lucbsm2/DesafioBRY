@@ -1,0 +1,27 @@
+# Visual Studio / VS Code
+.vs/
+.vscode/
+*.sln
+*.vcxproj
+*.vcxproj.user
+*.slnx
+
+# Compilação e Build
+build/
+out/
+bin/
+cmake-build-*/
+
+# Executáveis e binários
+*.exe
+*.dll
+*.pdb
+*.ilk
+*.lib
+
+# Conan e CMake
+package/
+CMakeUserPresets.json
+conan_toolchain.cmake
+CMakeCache.txt
+CMakeFiles/
